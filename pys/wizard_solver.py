@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # globals
-metric_num = len(['o', 'h', 'l', 'c', 'v_delta',])
+metric_num = len(['o', 'h', 'l', 'c', 'v_delta', 'cash', 'margin', 'profile'])
 step_num = 20
 time_scales = len(['tick', 'min', '5min', '15min', 'hour', 'day'])
 action_count = len(['b1', 's1', 'h', 'c'])
@@ -33,7 +33,9 @@ class WizardSolver(nn.Module):
 
         self.lins = nn.Sequential(
             nn.Linear(in_w, in_w),
+            nn.ReLU(),
             nn.Linear(in_w, in_w),
+            nn.ReLU(),
             nn.Linear(in_w, action_count),
         )
 
