@@ -14,12 +14,12 @@ kernel_w = 3 # metric_kinds
 
 
 
-class WizardSolver(nn.Module):
+class WizardDQN(nn.Module):
     """
     Convolutional Neural Net with 3 conv layers and two linear layers
     """
     def __init__(self):
-        super(WizardSolver, self).__init__()
+        super(WizardDQN, self).__init__()
 
         self.cons = nn.Sequential(
             nn.Conv2d(time_scales, time_scales, (kernel_h, kernel_w), padding=1),
@@ -44,7 +44,35 @@ class WizardSolver(nn.Module):
         lin_out = self.lins(con_out.view(-1))
         return F.softmax(lin_out)
 
+import random
+
+class solver():
+    def __init__(self, exploration_rate, lr):
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.exploration_rate = exploration_rate
+        self.dqn = WizardDQN()
+        self.optimizer = torch.optim.Adam(self.dqn.parameters(), lr=lr)
+        self.l1 = nn.SmoothL1Loss().to(self.device)
+    def act(self, state):
+        """Epsilon-greedy action"""
+        if random.random() < self.exploration_rate:
+            return torch.tensor([[random.randrange(self.action_space)]])
+        else:
+            return torch.argmax(self.dqn(state.to(self.device))).cpu()
+
+    def train(self):
+        self.optimizer.zero_grad()
+        # Q-Learning target is Q*(S, A) <- r + γ max_a Q(S', a)
+        target = REWARD + torch.mul((self.gamma * self.dqn(STATE2).max(1).values.unsqueeze(1)), 1 - DONE)
+        current = self.dqn(STATE).gather(1, ACTION.long())
+
+        loss = self.l1(current, target)
+        loss.backward()  # Compute gradients
+        self.optimizer.step()  # Backpropagate error
+
+
+
 
 if __name__ == '__main__':
-    m1 = WizardSolver()
+    m1 = WizardDQN()
     print(m1(fake_tick))
