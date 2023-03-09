@@ -1,6 +1,6 @@
 #!/usr/bin/env python -i
 
-import pandas
+from xorbits import pandas
 import sys
 import matplotlib.pyplot as plt
 plt.ion() # IMPORT: for plt.show() not hung the terminal
@@ -41,7 +41,7 @@ def tick_df():
             #ret.append(clear(df_tmp))
             ret.append(df_tmp)
             step, price_range = symbol_price_range(df_tmp)
-            print("%2d %7s volume: %7d, step %9.3f range %10d" % (x, s, df_tmp.volume.max() - df_tmp.volume.min(), step, price_range))
+            #print("%2d %7s volume: %7d, step %9.3f range %10d" % (x, s, df_tmp.volume.max() - df_tmp.volume.min(), step, price_range))
     return ret
 
 
@@ -66,7 +66,7 @@ def draw_one_row(row, x_min, x_max, step):
     left_size = last_green_index + 1
     right_size = price2index(x_min, x_max, step) - last_green_index
 
-    print(f"----------> max is {x_max}, min is {x_min}, left is {left_size}, right is {right_size} <------------")
+    print(f"max is {x_max}, min is {x_min}, left is {left_size}, right is {right_size}")
 
     green_colors = ['green'] * left_size
     red_colors = ['red'] * right_size
@@ -103,7 +103,10 @@ def draw_one_row(row, x_min, x_max, step):
 def draw_flow2(df, step):
     x_min = min(df.lastPrice)
     x_max = max(df.lastPrice)
-    df.apply(lambda row: draw_one_row(row, x_min - 5*step, x_max + 5*step, step), axis=1) # apply is fast than df.itertupples()
+
+    for row in df.itertuples(): # itertuples() is faster than iterrows(); https://towardsdatascience.com/efficiently-iterating-over-rows-in-a-pandas-dataframe-7dd5f9992c01
+        draw_one_row(row, x_min, x_max, step)
+
 
 def draw_flow(df):
     bar_labels = ['bid5', 'bid4', 'bid3', 'bid2', 'bid1', 'ask1', 'ask2', 'ask3', 'ask4', 'ask5']
@@ -113,10 +116,9 @@ def draw_flow(df):
     for index, row in df.iterrows():
         plt.clf()
         plt.bar(bar_labels, list(row[draw_columns]), color=bar_colors)
-        plt.pause(0.2)
-
+        plt.pause(0.05)
 
 if __name__ == "__main__":
     dfs = tick_df()
-    t1 = dfs[0]
-    
+    s = flow_one_tick(dfs[0], list(range(1,100)))
+    s2 = dfs[0][100:]
