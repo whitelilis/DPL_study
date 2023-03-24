@@ -29,14 +29,14 @@ def symbol_price_range(df):
 
 
 
-def tick_df():
-    if len(sys.argv) < 3:
-        print(f"Usage: python3 {sys.argv[0]} <parquet file> <symbol1> [symbol2] ...")
-        exit(1)
+def tick_df(argv):
+    if len(argv) < 2:
+        #print(f"Usage: python3 {argv[0]} <parquet file> <symbol1> [symbol2] ...")
+        return None
     else:
-        df = pandas.read_parquet(sys.argv[1])
+        df = pandas.read_parquet(argv[0])
         ret = []
-        for x, s in enumerate(sys.argv[2:]):
+        for x, s in enumerate(argv[1:]):
             df_tmp = df[df.symbol == s]
             #ret.append(clear(df_tmp))
             ret.append(df_tmp)
@@ -100,23 +100,19 @@ def draw_one_row(row, x_min, x_max, step):
 
 
 
-def draw_flow2(df, step):
+def draw_flow(df, step):
     x_min = min(df.lastPrice)
     x_max = max(df.lastPrice)
     df.apply(lambda row: draw_one_row(row, x_min - 5*step, x_max + 5*step, step), axis=1) # apply is fast than df.itertupples()
 
-def draw_flow(df):
-    bar_labels = ['bid5', 'bid4', 'bid3', 'bid2', 'bid1', 'ask1', 'ask2', 'ask3', 'ask4', 'ask5']
-    bar_colors = ['green', 'green', 'green', 'green', 'green', 'red', 'red','red','red','red']
-
-
-    for index, row in df.iterrows():
-        plt.clf()
-        plt.bar(bar_labels, list(row[draw_columns]), color=bar_colors)
-        plt.pause(0.2)
-
+def sim(df):
+    ret = df[["lastPrice", "volume", "askPrice1", "askVolume1", "bidPrice1", "bidVolume1"]]
+    ret.columns = ['p', 'v', 'a1', 'av1', 'b1', 'bv1']
+    ret.loc[:,'isb'] = ret.apply(lambda row: row['p'] == row['b1'], axis=1)
+    ret.loc[:,'dv'] = ret.v.diff()
+    return ret[1:]
 
 if __name__ == "__main__":
-    dfs = tick_df()
+    dfs = tick_df(sys.argv[1:])
     t1 = dfs[0]
     
